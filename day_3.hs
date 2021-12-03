@@ -28,9 +28,6 @@ mostFrequent = snd . maximum . map (length &&& head) . group . sort
 mostfrequency :: Binary -> Int
 mostfrequency = fst . maximum . map (length &&& head) . group . sort
 
-equalAmount :: Binary -> Bool
-equalAmount x = mostfrequency x * 2 == length x
-
 removeBits :: Int -> [Binary] -> [Binary]
 removeBits _ [] = []
 removeBits n (x:xs) = newBinary : removeBits n xs
@@ -53,11 +50,20 @@ bintodec :: Binary -> Int
 bintodec = foldl (\y x -> fromEnum x + 2*y) 0
 
 oxygenRating :: Int -> [Binary] -> Binary
+oxygenRating _ [x] = x
 oxygenRating n xs = oxygenRating (n + 1) filtered
     where
         binaries = removeBits n xs
-        bitCriteria = mostFrequent $ toMostCommonBit $ toMostCommonBits binaries
-        filtered = [x | x <- xs, head x == bitCriteria]
+        bitCriteria = head (mostFrequent <$> toMostCommonBits binaries)
+        filtered = [x | x <- xs, x !! n == bitCriteria]
+
+co2Rating :: Int -> [Binary] -> Binary
+co2Rating _ [x] = x
+co2Rating n xs = co2Rating (n + 1) filtered
+    where
+        binaries = removeBits n xs
+        bitCriteria = opposite $ head (mostFrequent <$> toMostCommonBits binaries)
+        filtered = [x | x <- xs, x !! n == bitCriteria]
 
 main = do
     content <- readFile "input.txt"
@@ -66,5 +72,6 @@ main = do
     let epsilon = invert gamma
     let gammaDecimal = bintodec gamma
     let epsilonDecimal = bintodec epsilon
-    let firstBits = toMostCommonBit binaries
-    return firstBits
+    let oxygen = bintodec $ oxygenRating 0 binaries
+    let co2 = bintodec $ co2Rating 0 binaries
+    return (oxygen * co2)
